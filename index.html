@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>114514</title>
+    <style>
+        :root {
+            --bg-color: #111;
+            --panel-bg: #000;
+            --text-text: #fff;
+            --time-color: #ffcc00;
+            --local-color: #00ff00; /* 區間車綠色 */
+            --express-color: #ff3333; /* 自強號紅色 */
+            --fast-color: #ff9900; /* 莒光號橘色 */
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-text);
+            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* 頂部車站與時間資訊 */
+        .header-info {
+            width: 95%;
+            max-width: 1000px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: #222;
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: 2px solid #444;
+        }
+
+        .current-time {
+            color: var(--time-color);
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* PIDS 主看板 */
+        .pids-board {
+            width: 95%;
+            max-width: 1000px;
+            background-color: var(--panel-bg);
+            border: 6px solid #333;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+        }
+
+        /* 表頭 */
+        .pids-header {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr 1.5fr 1fr 1fr 1.5fr;
+            background-color: #222;
+            border-bottom: 3px solid #444;
+            padding: 12px 0;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ccc;
+        }
+
+        /* 列車資料列 */
+        .pids-row {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr 1.5fr 1fr 1fr 1.5fr;
+            border-bottom: 1px solid #222;
+            padding: 15px 0;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: bold;
+            align-items: center;
+        }
+
+        .pids-row:nth-child(even) {
+            background-color: #050505;
+        }
+
+        /* 車種顏色分類 */
+        .train-type.local { color: var(--local-color); }
+        .train-type.tze-chiang { color: var(--express-color); }
+        .train-type.chu-kuang { color: var(--fast-color); }
+
+        /* 狀態顏色 */
+        .status.on-time { color: #00ff00; }
+        .status.delayed { color: #ff3333; }
+
+        /* 跑馬燈區塊 */
+        .marquee-container {
+            width: 95%;
+            max-width: 1000px;
+            background-color: #000;
+            border: 2px solid #333;
+            margin-top: 20px;
+            padding: 10px 0;
+            overflow: hidden;
+            border-radius: 5px;
+        }
+
+        .marquee-text {
+            display: inline-block;
+            white-space: nowrap;
+            padding-left: 100%;
+            animation: marquee 25s linear infinite;
+            color: #ff9900;
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        @keyframes marquee {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+
+        /* 模擬控制台 */
+        .controls {
+            margin-top: 30px;
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #004085;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 車站與時間 -->
+    <div class="header-info">
+        <div>板橋車站 <span style="font-size: 1rem; color: #aaa;">Taipei Station</span></div>
+        <div class="current-time" id="live-clock">00:00:00</div>
+    </div>
+
+    <!-- PIDS 主面板 -->
+    <div class="pids-board">
+        <div class="pids-header">
+            <div>月台<br><span style="font-size:0.8rem;">Plat.</span></div>
+            <div>車次<br><span style="font-size:0.8rem;">Train No.</span></div>
+            <div>車種<br><span style="font-size:0.8rem;">Type</span></div>
+            <div>終點站<br><span style="font-size:0.8rem;">Dest.</span></div>
+            <div>時間<br><span style="font-size:0.8rem;">Time</span></div>
+            <div>狀況<br><span style="font-size:0.8rem;">Status</span></div>
+        </div>
+        
+        <div id="train-rows">
+            <!-- 由 JavaScript 動態渲染 -->
+        </div>
+    </div>
+
+    <!-- 底部跑馬燈 -->
+    <div class="marquee-container">
+        <div class="marquee-text" id="marquee-content">
+            歡迎蒞臨板橋車站。乘車時請勿越過黃色警戒線。        </div>
+    </div>
+
+    <!-- 模擬控制鈕 -->
+    <div class="controls">
+        <button onclick="refreshData()">🔄 隨機更新車況 (模擬)</button>
+        <button onclick="toggleAlert()">⚠️ 切換緊急廣播跑馬燈</button>
+    </div>
+
+    <script>
+        // 初始列車資料庫
+        const trainData = [
+            { platform: "1A", no: "1141", type: "區間車", typeClass: "local", dest: "新竹", time: "18:40", status: "晚261分", statusClass: "delayed" },
+            { platform: "2B", no: "273", type: "太魯閣", typeClass: "tze-chiang", dest: "花蓮", time: "18:45", status: "晚736分", statusClass: "delayed" },
+            { platform: "1B", no: "175", type: "自強號", typeClass: "tze-chiang", dest: "潮州", time: "18:52", status: "晚716分", statusClass: "delayed" },
+            { platform: "2A", no: "521", type: "莒光號", typeClass: "chu-kuang", dest: "臺東", time: "19:05", status: "晚362分", statusClass: "delayed" },
+            { platform: "1A", no: "1251", type: "區間快", typeClass: "local", dest: "基隆", time: "19:12", status: "晚356分", statusClass: "delayed" }
+        ];
+
+        // 渲染表格
+        function renderBoard() {
+            const container = document.getElementById("train-rows");
+            container.innerHTML = "";
+
+            trainData.forEach(train => {
+                const row = document.createElement("div");
+                row.className = "pids-row";
+                row.innerHTML = `
+                    <div>${train.platform}</div>
+                    <div style="color: #ffcc00; font-family: monospace;">${train.no}</div>
+                    <div class="train-type ${train.typeClass}">${train.type}</div>
+                    <div>${train.dest}</div>
+                    <div style="color: #fff; font-family: monospace;">${train.time}</div>
+                    <div class="status ${train.statusClass}">${train.status}</div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // 即時時鐘
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById("live-clock").innerText = `${hours}:${minutes}:${seconds}`;
+        }
+
+        // 模擬隨機變更狀態（延誤/準點）
+        function refreshData() {
+            trainData.forEach(train => {
+                const rand = Math.random();
+                if (rand > 0.7) {
+                    const delayMin = Math.floor(Math.random() * 15) + 1;
+                    train.status = `晚 ${delayMin} 分`;
+                    train.statusClass = "delayed";
+                } else {
+                    train.status = "準點";
+                    train.statusClass = "on-time";
+                }
+            });
+            renderBoard();
+        }
+
+        // 模擬更換跑馬燈內容
+        let isAlert = false;
+        function toggleAlert() {
+            const marquee = document.getElementById("marquee-content");
+            if (!isAlert) {
+                marquee.innerText = "🚨 系統廣播：受豪雨影響，部分北部路段列車將有輕微延誤，請旅客多加留意最新資訊。";
+                marquee.style.color = "#ff3333";
+            } else {
+                marquee.innerText = "歡迎蒞臨台鐵車站。乘車時請勿越過黃色警戒線。為維護乘車安全，請配偶或隨行旅客注意孩童安全。";
+                marquee.style.color = "#ff9900";
+            }
+            isAlert = !isAlert;
+        }
+
+        // 初始化啟動
+        setInterval(updateClock, 1000);
+        updateClock();
+        renderBoard();
+    </script>
+</body>
+</html>
